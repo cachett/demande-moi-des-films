@@ -29,8 +29,6 @@ class Movie:
         self.war = 0
         self.western = 0
 
-        self.init_genres(genres)
-
     def init_genres(self, genres):
         for genre in genres.split('|'):
             if genre == "Action":
@@ -70,6 +68,48 @@ class Movie:
             if genre == "Western":
                 self.western = 1
 
+    def __str__(self):
+        return self.title
+
+    def get_genre(self):
+        genre = np.zeros(18)
+        if self.action == 1 :
+            genre[0] = 1
+        if self.adventure == 1 :
+            genre[1] = 1
+        if self.animation == 1 :
+            genre[2] = 1
+        if self.action == 1 :
+            genre[3] = 1
+        if self.action == 1 :
+            genre[4] = 1
+        if self.action == 1 :
+            genre[5] = 1
+        if self.action == 1 :
+            genre[6] = 1
+        if self.action == 1 :
+            genre[7] = 1
+        if self.action == 1 :
+            genre[8] = 1
+        if self.action == 1 :
+            genre[9] = 1
+        if self.action == 1 :
+            genre[10] = 1
+        if self.musical == 1 :
+            genre[11] = 1
+        if self.mystery == 1 :
+            genre[12] = 1
+        if self.romance == 1 :
+            genre[13] = 1
+        if self.sci_fi == 1 :
+            genre[14] = 1
+        if self.thriller == 1 :
+            genre[15] = 1
+        if self.war == 1 :
+            genre[16] = 1
+        if self.western == 1 :
+            genre[17] = 1
+        return genre
 
 class Rating:
 

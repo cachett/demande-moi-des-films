@@ -35,7 +35,10 @@ class Recommendation:
         # Launch the process of ratings
         self.process_ratings_to_users()
 
+
+
     # To process ratings, users associated to ratings are created and every rating is then stored in its user
+
     def process_ratings_to_users(self):
         for rating in self.ratings:
             user = self.register_test_user(rating.user)
@@ -58,8 +61,25 @@ class Recommendation:
     def make_recommendation(self, user):
         #movie = choice(list(self.movies.values())).title choice c'est choix aléatoire en python
         similarities = Recommendation.compute_all_similarities(self, user)
-        bestUser = list(self.test_users.values()[np.argmax(similarities)])
-        movie = choice(bestUser.good_ratings)
+        indices = similarities.argsort()[-5:][::-1]
+        bestUsers = np.array(list(self.test_users.values()))[indices]
+        all_possible_movie = np.append(bestUsers[0].good_ratings, bestUsers[1].good_ratings)
+        for i in range(3):
+            all_possible_movie = np.append(all_possible_movie, bestUsers[i+2].good_ratings)
+
+        all_possible_movie_doublon = np.array([])
+        movie_bin = np.array([])
+
+        for movies in all_possible_movie:
+            if movies in movie_bin:
+                all_possible_movie_doublon = np.append(all_possible_movie_doublon, [movies])
+            else:
+                movie_bin = np.append(movie_bin, [movies])
+        all_possible_movie_doublon = np.unique(all_possible_movie_doublon)
+
+        movie = ""
+        for movi in all_possible_movie_doublon:
+            movie += movi.title + ", "
         return "Vos recommandations : " + ", ".join([movie])
 
     # Compute the similarity between two users
@@ -67,17 +87,17 @@ class Recommendation:
     def get_similarity(user_a, user_b):
         allmovies = np.array([])
         for movie in user_a.good_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
         for movie in user_a.bad_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
         for movie in user_a.neutral_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
         for movie in user_b.good_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
         for movie in user_b.bad_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
         for movie in user_b.neutral_ratings:
-            allmovies= np.append(allmovies, [f.id])
+            allmovies= np.append(allmovies, [movie.id])
 
         allmovies = np.unique(allmovies)
 
@@ -96,7 +116,7 @@ class Recommendation:
             vectB[np.where(allmovies == f.id)]= -1
 
 
-        return np.dot(vectA, vectB)/(Recommendation.get_user_norm(user_a)*Recommendation.get_user_norm(userb))
+        return np.dot(vectA, vectB)/(Recommendation.get_user_norm(user_a)*Recommendation.get_user_norm(user_b))
 
     # Compute the similarity between a user and all the users in the data set
     def compute_all_similarities(self, user):
@@ -116,7 +136,7 @@ class Recommendation:
 
     @staticmethod
     def get_user_norm(user):
-        return np.sqrt(len(user_a.good_ratings)) + np.sqrt(len(user_a.bad_ratings))
+        return np.sqrt(len(user.good_ratings)) + np.sqrt(len(user.bad_ratings))
 
     # Return a vector with the normalised ratings of a user
     @staticmethod
