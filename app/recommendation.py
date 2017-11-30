@@ -3,7 +3,7 @@
 # All the recommandation logic and algorithms goes here
 
 from random import choice
-
+import numpy as np
 from app.User import User
 
 
@@ -56,18 +56,55 @@ class Recommendation:
 
     # Display the recommendation for a user
     def make_recommendation(self, user):
-        movie = choice(list(self.movies.values())).title
-
+        #movie = choice(list(self.movies.values())).title choice c'est choix aléatoire en python
+        similarities = Recommendation.compute_all_similarities(self, user)
+        bestUser = list(self.test_users.values()[np.argmax(similarities)])
+        movie = choice(bestUser.good_ratings)
         return "Vos recommandations : " + ", ".join([movie])
 
     # Compute the similarity between two users
     @staticmethod
     def get_similarity(user_a, user_b):
-        return 1
+        allmovies = np.array([])
+        for movie in user_a.good_ratings:
+            allmovies= np.append(allmovies, [f.id])
+        for movie in user_a.bad_ratings:
+            allmovies= np.append(allmovies, [f.id])
+        for movie in user_a.neutral_ratings:
+            allmovies= np.append(allmovies, [f.id])
+        for movie in user_b.good_ratings:
+            allmovies= np.append(allmovies, [f.id])
+        for movie in user_b.bad_ratings:
+            allmovies= np.append(allmovies, [f.id])
+        for movie in user_b.neutral_ratings:
+            allmovies= np.append(allmovies, [f.id])
+
+        allmovies = np.unique(allmovies)
+
+        #VectA
+        vectA = np.zeros(len(allmovies))
+        for f in user_a.good_ratings:
+            vectA[np.where(allmovies == f.id)]= 1 # where retourne la liste des index ou c'est vrai
+        for f in user_a.bad_ratings:
+            vectA[np.where(allmovies == f.id)]= -1
+
+        #VectB
+        vectB = np.zeros(len(allmovies))
+        for f in user_b.good_ratings:
+            vectB[np.where(allmovies == f.id)]= 1 # where retourne la liste des index ou c'est vrai
+        for f in user_b.bad_ratings:
+            vectB[np.where(allmovies == f.id)]= -1
+
+
+        return np.dot(vectA, vectB)/(Recommendation.get_user_norm(user_a)*Recommendation.get_user_norm(userb))
 
     # Compute the similarity between a user and all the users in the data set
     def compute_all_similarities(self, user):
-        return []
+        similarities = np.array([])
+        for user_test in self.test_users.values():
+            l = Recommendation.get_similarity(user, user_test)
+            similarities = np.append(similarities, [l])
+        return similarities
 
     @staticmethod
     def get_best_movies_from_users(users):
@@ -79,7 +116,7 @@ class Recommendation:
 
     @staticmethod
     def get_user_norm(user):
-        return 1
+        return np.sqrt(len(user_a.good_ratings)) + np.sqrt(len(user_a.bad_ratings))
 
     # Return a vector with the normalised ratings of a user
     @staticmethod
