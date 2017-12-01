@@ -85,7 +85,7 @@ class Recommendation:
         for movie in best_movies:
             if movie not in user.asked_movies:
                 movie_str += movie.title + " // "
-        movie_str = movie_str.replace("The //,", " //")[:-3]
+        movie_str = movie_str.replace("The //", " //")[:-3]
         return "Vos recommandations : "  + movie_str
 
     # Compute the similarity between two users
@@ -129,7 +129,7 @@ class Recommendation:
         #prend les n films les mieux notés par les users proches
         best_movies = []
         i=1
-        while (len(best_movies)<4) and i < len(sorted_movies):
+        while ((len(best_movies) < 5) and (i < len(sorted_movies))):
             movie_id = sorted_movies[-i][0]
             if movies[movie_id] not in asked_movies:
                 best_movies.append(movies[movie_id])
