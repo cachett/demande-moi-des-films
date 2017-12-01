@@ -39,7 +39,7 @@ class Recommendation:
         self.tab_genres = np.reshape(self.tab_genres, (-1,18))
 
         #Initialisation de l'algo de clustering et entrainement
-        self.kmeans = KMeans(init='k-means++', n_clusters=10, n_init=10).fit(self.tab_genres);
+        self.kmeans = KMeans(init='k-means++', n_clusters=10, n_init=2).fit(self.tab_genres);
 
         # Launch the process of ratings
         self.process_ratings_to_users()
@@ -54,8 +54,7 @@ class Recommendation:
             score = rating.score
             cluster = self.kmeans.predict(np.array([movie.get_genre()]))[0]
             user.ratings[cluster] = np.append(user.ratings[cluster], [score])
-            if (score>=4):
-                user.good_ratings.append(movie)
+
 
 
     # Register a user if it does not exist and return it
@@ -75,19 +74,18 @@ class Recommendation:
 
         #calcul des similarités suivant les vecteur de notes de cluster et choisi les users proches
         similarities = Recommendation.compute_all_similarities(self, user)
-        print(similarities)
-        indices = similarities.argsort()[-6:][::-1] #prend les indices des 5 plus grandes valeurs de similarité et inverse l'ordre
+        indices = similarities.argsort()[-50:][::-1] #prend les indices des n plus grandes valeurs de similarité et inverse l'ordre
         #Récupération des utilisateurs les plus proches
-        bestUsers = np.array(list(self.test_users.values()))[indices] #on prend les 5 users correspondants à ces indices
-        best_movies = Recommendation.get_best_movies_from_users(bestUsers, user.asked_movies)
+        bestUsers = np.array(list(self.test_users.keys()))[indices] #on prend les n users correspondants à ces indices
+        best_movies = Recommendation.get_best_movies_from_users(bestUsers, user.asked_movies, self.ratings, self.movies)
 
 
         #Affichage
         movie_str = ""
         for movie in best_movies:
             if movie not in user.asked_movies:
-                movie_str += movie.title + ", "
-        movie_str = movie_str[:-2]
+                movie_str += movie.title + " // "
+        movie_str = movie_str.replace("The,", "")[:-3]
         return "Vos recommandations : "  + movie_str
 
     # Compute the similarity between two users
@@ -109,27 +107,32 @@ class Recommendation:
         return similarities
 
     @staticmethod
-    def get_best_movies_from_users(users, asked_movies):
-        #Return the 3 bests movie, sorted by frequency
+    def get_best_movies_from_users(users, asked_movies, ratings, movies):
+        #Return the n bests movie, sorted by frequency
         best_movies = np.array([])
-        candidate_movies_hash = dict()
-
-        for user in users:
-            for movie in user.good_ratings:
-                if movie in candidate_movies_hash.keys():
-                    candidate_movies_hash[movie] +=1
+        predicted_grade_movies_hash = dict()
+        predicted_mean_movies_hash = dict()
+        for rating in ratings:
+            if rating.user in users: #si c'est un candidat proche on prend on compte ses notes sinon non
+                if rating.movie in predicted_grade_movies_hash.keys():
+                    predicted_grade_movies_hash[rating.movie]  = np.append(predicted_grade_movies_hash[rating.movie], [rating.score])
                 else:
-                    candidate_movies_hash[movie] = 1
+                    predicted_grade_movies_hash[rating.movie] = np.array([rating.score])
 
-        sorted_movies = sorted(candidate_movies_hash.items(), key=lambda x: x[1]) #films triés par fréquence d'apparition dans les best users
+        for key in predicted_grade_movies_hash.keys(): #moyenne des films vu par les candidats proche
+            if (len(predicted_grade_movies_hash[key]) > 4): #Ne garde les quils qui ont eu au moins 5 notes
+                predicted_mean_movies_hash[key] = np.mean(predicted_grade_movies_hash[key])
 
-        #prend 3 meilleurs films qui ne sont pas déja demandés
+
+
+        sorted_movies = sorted(predicted_mean_movies_hash.items(), key=lambda x: x[1])
+        #prend les n films les mieux notés par les users proches
         best_movies = []
         i=1
-        while (len(best_movies)<4):
-            movie = sorted_movies[-i][0]
-            if movie not in asked_movies:
-                best_movies.append(movie)
+        while (len(best_movies)<4) and i < len(sorted_movies):
+            movie_id = sorted_movies[-i][0]
+            if movies[movie_id] not in asked_movies:
+                best_movies.append(movies[movie_id])
             i+=1
 
         return best_movies

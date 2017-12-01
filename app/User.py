@@ -8,7 +8,7 @@ class User:
         self.id = sender_id
         # Variables used to follow at what step is the user
         self.latest_movie_asked = None
-        self.questions_before_recommendation = 5
+        self.questions_before_recommendation = 6
         # Variables used for the first algorithm
 
         self.bad_ratings = []
