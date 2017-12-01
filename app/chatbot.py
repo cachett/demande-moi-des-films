@@ -48,7 +48,7 @@ class Bot(object):
         self.picked_movies.append(movie)
 
         user.set_pending_question(movie)
-        return u"As-tu kiffé : " + movie.title + " (NOTE SUR 5) \n Si tu connais pas écrit \"pass\""+u" ?"
+        return u"As-tu kiffé : " + movie.title + "? (NOTE SUR 5). \n Si tu connais pas écrit \"pass\""
 
 
 # Take a movie randomly
