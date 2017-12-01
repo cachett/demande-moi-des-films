@@ -28,7 +28,7 @@ class Bot(object):
             intro = u""
             # If the user speak for the first time, display a welcome message
             if not user.has_been_asked_a_question():
-                intro = u"Salut ma poule ! Je vais vous poser des questions puis vous faire une recommandation.\n"
+                intro = u"Salut ma poule ! Je vais te poser des questions puis te faire une petite recommandation.\n"
 
             message = self.ask_question(user)
             return intro + message
@@ -42,7 +42,7 @@ class Bot(object):
     def ask_question(self, user):
         movie = self.movie_picker.pick_a_movie()
         user.set_pending_question(movie)
-        return u"Avez-vous aimé : " + movie.title + u" ?"
+        return u"As-tu kiffé : " + movie.title + " (note sur 5!)"+u" ?"
 
 
 # Take a movie randomly

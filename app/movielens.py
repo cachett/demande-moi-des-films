@@ -1,7 +1,7 @@
 # Take care of importing the movie database and the training data set
 
 import csv
-
+import numpy as np
 
 class Movie:
 
@@ -28,6 +28,7 @@ class Movie:
         self.thriller = 0
         self.war = 0
         self.western = 0
+        self.init_genres(genres)
 
     def init_genres(self, genres):
         for genre in genres.split('|'):
@@ -70,6 +71,9 @@ class Movie:
 
     def __str__(self):
         return self.title
+
+    def __lt__(self, other):
+        return self.id < other.id
 
     def get_genre(self):
         genre = np.zeros(18)
