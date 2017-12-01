@@ -85,7 +85,7 @@ class Recommendation:
         for movie in best_movies:
             if movie not in user.asked_movies:
                 movie_str += movie.title + " // "
-        movie_str = movie_str.replace("The,", "")[:-3]
+        movie_str = movie_str.replace("The //,", " //")[:-3]
         return "Vos recommandations : "  + movie_str
 
     # Compute the similarity between two users
