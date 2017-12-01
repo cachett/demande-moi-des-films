@@ -15,6 +15,7 @@ class Bot(object):
         self.movielens = MovieLens()
         self.recommendation = Recommendation(self.movielens)
         self.movie_picker = MoviePicker(self.movielens)
+        self.picked_movies = []
         self.users = {}
 
     def respond_to(self, sender, message):
@@ -41,6 +42,11 @@ class Bot(object):
 
     def ask_question(self, user):
         movie = self.movie_picker.pick_a_movie()
+        #We check if we have already picked this movie
+        while (movie in self.picked_movies):
+            movie = self.movie_picker.pick_a_movie()
+        self.picked_movies.append(movie)
+        
         user.set_pending_question(movie)
         return u"As-tu kiffé : " + movie.title + " (note sur 5!)"+u" ?"
 

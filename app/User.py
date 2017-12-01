@@ -8,15 +8,16 @@ class User:
         self.id = sender_id
         # Variables used to follow at what step is the user
         self.latest_movie_asked = None
-        self.questions_before_recommendation = 5
+        self.questions_before_recommendation = 4
         # Variables used for the first algorithm
 
-        #self.good_ratings = []
         self.bad_ratings = []
         self.neutral_ratings = []
+
         # Variables used for the second algorithm
         self.ratings = dict()
-        self.good_ratings = []
+        self.asked_movies = []
+        self.good_ratings = [] #will contain movie rated more than 4
         self.rates = [] # servira pour l'utilisateur courant
         for i in range(10):
             self.ratings[i] = np.array([])
@@ -71,6 +72,9 @@ class User:
         # If nothing is asked to the user, do nothing
         if self.latest_movie_asked is None:
             return
+
+        #else, register the movie asked
+        self.asked_movies.append(self.latest_movie_asked)
 
         # Clean space excess and set to lowercase
         clean_message = message.lower().strip()

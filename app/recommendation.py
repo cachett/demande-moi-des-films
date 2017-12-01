@@ -32,8 +32,6 @@ class Recommendation:
         # This is the set of users in the training set
         self.test_users = {}
 
-
-
         # Tableau contenant les genres de chaques films dans la BD
         self.tab_genres = np.array([])
         for movie in self.movies.values():
@@ -45,8 +43,7 @@ class Recommendation:
 
         # Launch the process of ratings
         self.process_ratings_to_users()
-        # vecteur de notation normalisé
-        self.user_cluster_matrix = np.array([])
+
 
     # To process ratings, users associated to ratings are created and every rating is then stored in its user
 
@@ -69,10 +66,6 @@ class Recommendation:
 
     # Display the recommendation for a user
     def make_recommendation(self, user):
-        #Vecteur normalisés pour les user test
-        for user_test in self.test_users.values():
-            self.user_cluster_matrix = np.append(self.user_cluster_matrix, Recommendation.get_normalised_cluster_notations(user_test))
-
         #on remplit ratings pour le user courant
         for rating in user.rates:
             movie = self.movies[rating.movie]
@@ -80,32 +73,22 @@ class Recommendation:
             cluster = self.kmeans.predict(np.array([movie.get_genre()]))[0]
             user.ratings[cluster] = np.append(user.ratings[cluster], [score])
 
-
-
-        #movie = choice(list(self.movies.values())).title choice c'est choix aléatoire en python
+        #calcul des similarités suivant les vecteur de notes de cluster et choisi les users proches
         similarities = Recommendation.compute_all_similarities(self, user)
         print(similarities)
-        indices = similarities.argsort()[-5:][::-1] #prend les indices des 5 plus grandes valeurs de similarité et inverse l'ordre
+        indices = similarities.argsort()[-6:][::-1] #prend les indices des 5 plus grandes valeurs de similarité et inverse l'ordre
+        #Récupération des utilisateurs les plus proches
         bestUsers = np.array(list(self.test_users.values()))[indices] #on prend les 5 users correspondants à ces indices
-        all_possible_movie = Recommendation.get_best_movies_from_users(bestUsers)
-        all_possible_movie_doublon = np.array([])
-        movie_bin = np.array([])
-        print(all_possible_movie)
-
-        #Ne garde que les films qui on été aimé par au moins deux autres Users proches
-        for movies in all_possible_movie:
-            if movies in movie_bin:
-                all_possible_movie_doublon = np.append(all_possible_movie_doublon, [movies])
-            else:
-                movie_bin = np.append(movie_bin, [movies])
-        all_possible_movie_doublon = np.unique(all_possible_movie_doublon)
+        best_movies = Recommendation.get_best_movies_from_users(bestUsers, user.asked_movies)
 
 
         #Affichage
-        movie = ""
-        for movi in all_possible_movie_doublon:
-            movie += movi.title + ", "
-        return "Vos recommandations : " + ", ".join([movie])
+        movie_str = ""
+        for movie in best_movies:
+            if movie not in user.asked_movies:
+                movie_str += movie.title + ", "
+        movie_str = movie_str[:-2]
+        return "Vos recommandations : "  + movie_str
 
     # Compute the similarity between two users
     @staticmethod
@@ -114,43 +97,7 @@ class Recommendation:
         b = Recommendation.get_normalised_cluster_notations(user_b)
         norm_a = Recommendation.get_user_norm(a)
         norm_b = Recommendation.get_user_norm(b)
-        print(norm_a)
-        print(norm_b)
         return np.dot(a, b)/(norm_a * norm_b)
-    # @staticmethod
-    # def get_similarity(user_a, user_b):
-    #     allmovies = np.array([])
-    #     for movie in user_a.good_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #     for movie in user_a.bad_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #     for movie in user_a.neutral_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #     for movie in user_b.good_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #     for movie in user_b.bad_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #     for movie in user_b.neutral_ratings:
-    #         allmovies= np.append(allmovies, [movie.id])
-    #
-    #     allmovies = np.unique(allmovies)
-    #
-    #     #VectA
-    #     vectA = np.zeros(len(allmovies))
-    #     for f in user_a.good_ratings:
-    #         vectA[np.where(allmovies == f.id)]= 1 # where retourne la liste des index ou c'est vrai
-    #     for f in user_a.bad_ratings:
-    #         vectA[np.where(allmovies == f.id)]= -1
-    #
-    #     #VectB
-    #     vectB = np.zeros(len(allmovies))
-    #     for f in user_b.good_ratings:
-    #         vectB[np.where(allmovies == f.id)]= 1 # where retourne la liste des index ou c'est vrai
-    #     for f in user_b.bad_ratings:
-    #         vectB[np.where(allmovies == f.id)]= -1
-    #
-    #
-    #     return np.dot(vectA, vectB)/(Recommendation.get_user_norm(user_a)*Recommendation.get_user_norm(user_b))
 
     # Compute the similarity between a user and all the users in the data set
     def compute_all_similarities(self, user):
@@ -162,10 +109,29 @@ class Recommendation:
         return similarities
 
     @staticmethod
-    def get_best_movies_from_users(users):
+    def get_best_movies_from_users(users, asked_movies):
+        #Return the 3 bests movie, sorted by frequency
         best_movies = np.array([])
+        candidate_movies_hash = dict()
+
         for user in users:
-            best_movies = np.append(best_movies, user.good_ratings)
+            for movie in user.good_ratings:
+                if movie in candidate_movies_hash.keys():
+                    candidate_movies_hash[movie] +=1
+                else:
+                    candidate_movies_hash[movie] = 1
+
+        sorted_movies = sorted(candidate_movies_hash.items(), key=lambda x: x[1]) #films triés par fréquence d'apparition dans les best users
+
+        #prend 3 meilleurs films qui ne sont pas déja demandés
+        best_movies = []
+        i=1
+        while (len(best_movies)<4):
+            movie = sorted_movies[-i][0]
+            if movie not in asked_movies:
+                best_movies.append(movie)
+            i+=1
+
         return best_movies
 
     @staticmethod
